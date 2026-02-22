@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="src/Financial.Messaging.Abstractions/Financial.Messaging.Abstractions.csproj" />
+  <Project Path="src/Financial.Messaging.RabbitMq/Financial.Messaging.RabbitMq.csproj" />
+</Solution>
