@@ -1,0 +1,74 @@
+name: CI - DotNet Publish NuGet
+
+on:
+  workflow_dispatch:
+    inputs:
+      project:
+        description: 'Project to publish'
+        required: true
+        type: choice
+        options:
+          - Messaging.Abstractions
+          - Messaging.RabbitMq
+      prerelease:
+        description: 'Prerelease suffix (e.g. beta.1)'
+        required: false
+        type: string
+        default: ''
+
+jobs:
+  build-and-test:
+    uses: ./.github/workflows/dotnet-build-and-test.yml
+
+  publish:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+
+    env:
+      PROJECT_PREFIX: Financial
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.x'
+
+      - name: Login to NuGet (Trusted Publishing)
+        uses: NuGet/login@v1
+        with:
+          nugetServer: https://api.nuget.org/v3/index.json
+
+      - name: Resolve version
+        id: version
+        run: |
+          PROJECT="${{ env.PROJECT_PREFIX }}.${{ github.event.inputs.project }}"
+          CSPROJ="src/$PROJECT/$PROJECT.csproj"
+          BASE_VERSION=$(dotnet msbuild "$CSPROJ" -getProperty:Version)
+
+          if [ -n "${{ github.event.inputs.prerelease }}" ]; then
+            VERSION="$BASE_VERSION-${{ github.event.inputs.prerelease }}"
+          else
+            VERSION="$BASE_VERSION"
+          fi
+
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "project=$PROJECT" >> $GITHUB_OUTPUT
+          echo "Publishing $PROJECT v$VERSION"
+
+      - name: Pack
+        run: |
+          dotnet pack src/${{ steps.version.outputs.project }}/${{ steps.version.outputs.project }}.csproj \
+            --configuration Release \
+            --output ./nupkgs \
+            -p:Version=${{ steps.version.outputs.version }}
+
+      - name: Push to NuGet
+        run: |
+          dotnet nuget push ./nupkgs/*.nupkg \
+            --source https://api.nuget.org/v3/index.json \
+            --skip-duplicate

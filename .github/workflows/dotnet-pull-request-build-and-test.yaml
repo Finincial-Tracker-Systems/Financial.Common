@@ -1,0 +1,12 @@
+name: CI - DotNet Pull Request Build & Test
+
+on:
+  push:
+    branches: [ development ]
+  pull_request:
+    branches: [ development ]
+
+jobs:
+  build-and-test:
+    uses: ./.github/workflows/dotnet-build-and-test.yaml
+    secrets: inherit
