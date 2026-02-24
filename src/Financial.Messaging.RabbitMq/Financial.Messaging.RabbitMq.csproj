@@ -4,4 +4,14 @@
     <PackageId>Financial.Tracker.Messaging.RabbitMq</PackageId>
   </PropertyGroup>
 
+  <ItemGroup>
+    <PackageReference Include="Financial.Tracker.Messaging.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
+    <PackageReference Include="RabbitMQ.Client" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="DependencyInjection\" />
+  </ItemGroup>
+
 </Project>
