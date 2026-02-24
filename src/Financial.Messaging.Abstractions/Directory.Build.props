@@ -2,5 +2,7 @@
   <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
   <PropertyGroup>
     <Version>1.0.0</Version>
+    <Nullable>enable</Nullable>
+    <Description>Core abstractions for messaging.</Description>
   </PropertyGroup>
 </Project>

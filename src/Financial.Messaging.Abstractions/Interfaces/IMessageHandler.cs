@@ -1,6 +1,4 @@
-﻿using Financial.Messaging.Abstractions.Messages;
-
-namespace Financial.Messaging.Abstractions;
+﻿namespace Financial.Messaging.Abstractions.Messages;
 
 public interface IMessageHandler<in TMessage>
     where TMessage : class, IMessage

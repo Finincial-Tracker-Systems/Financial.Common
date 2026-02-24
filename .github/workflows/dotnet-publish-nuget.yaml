@@ -1,5 +1,7 @@
 name: CI - DotNet Publish NuGet
 
+run-name: "Publish Financial.${{ github.event.inputs.project }}"
+
 on:
   workflow_dispatch:
     inputs:
@@ -18,17 +20,19 @@ on:
 
 jobs:
   build-and-test:
-    uses: ./.github/workflows/build-and-test.yml
+    uses: ./.github/workflows/dotnet-build-and-test.yaml
 
   publish:
     needs: build-and-test
     runs-on: ubuntu-latest
 
     permissions:
-      id-token: write
+      packages: write
 
     env:
-      PROJECT_PREFIX: Financial.Tracker
+      DOTNET_VERSION: '8.x'
+      PROJECT_PREFIX: Financial
+      NUGET_SOURCE: https://api.nuget.org/v3/index.json
 
     steps:
       - uses: actions/checkout@v4
@@ -36,34 +40,38 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '8.x'
+          dotnet-version: ${{ env.DOTNET_VERSION }}
 
       - name: Resolve version
         id: version
+        env:
+          PRERELEASE: ${{ github.event.inputs.prerelease }}
         run: |
           PROJECT="${{ env.PROJECT_PREFIX }}.${{ github.event.inputs.project }}"
           CSPROJ="src/$PROJECT/$PROJECT.csproj"
           BASE_VERSION=$(dotnet msbuild "$CSPROJ" -getProperty:Version)
 
-          if [ -n "${{ github.event.inputs.prerelease }}" ]; then
-            VERSION="$BASE_VERSION-${{ github.event.inputs.prerelease }}"
+          if [ -n "$PRERELEASE" ]; then
+            VERSION="$BASE_VERSION-$PRERELEASE"
           else
             VERSION="$BASE_VERSION"
           fi
 
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "project=$PROJECT" >> $GITHUB_OUTPUT
-          echo "Publishing $PROJECT v$VERSION"
+          echo "Financial.$PROJECT v$VERSION" >> $GITHUB_STEP_SUMMARY
 
       - name: Pack
+        working-directory: src/${{ steps.version.outputs.project }}
         run: |
-          dotnet pack src/${{ steps.version.outputs.project }}/${{ steps.version.outputs.project }}.csproj \
+          dotnet pack \
             --configuration Release \
-            --output ./nupkgs \
+            --output ../../nupkgs \
             -p:Version=${{ steps.version.outputs.version }}
 
-      - name: Push to NuGet
+      - name: Push to GitHub Packages
         run: |
           dotnet nuget push ./nupkgs/*.nupkg \
-            --source https://api.nuget.org/v3/index.json \
+            --source "https://nuget.pkg.github.com/AlesonDev/index.json" \
+            --api-key ${{ secrets.GITHUB_TOKEN }} \
             --skip-duplicate

@@ -7,6 +7,5 @@
     <Authors>Nazar Lukianov</Authors>
     <Company>FinancialTracker</Company>
     <RepositoryUrl>https://github.com/AlesonDev/Financial.Common</RepositoryUrl>
-    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
 </Project>

@@ -1,7 +1,12 @@
-name: CI - DotNet Build & Test
+name: CI - DotNet Build and Test
 
 on:
   workflow_call:
+  workflow_dispatch:
+  push:
+    branches: [ development ]
+  pull_request:
+    branches: [ development ]
 
 jobs:
   build-and-test:

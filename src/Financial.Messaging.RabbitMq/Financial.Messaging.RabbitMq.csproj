@@ -1,10 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <PackageId>FinancialTracker.Messaging.RabbitMq</PackageId>
-    <Version>1.0.0</Version>
-    <Nullable>enable</Nullable>
-    <Description>RabbitMQ implementation of FinancialTracker messaging abstractions.</Description>
+    <PackageId>Financial.Tracker.Messaging.RabbitMq</PackageId>
   </PropertyGroup>
 
 </Project>
