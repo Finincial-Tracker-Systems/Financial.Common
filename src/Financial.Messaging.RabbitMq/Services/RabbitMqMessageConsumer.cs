@@ -8,125 +8,136 @@ using System.Text.Json;
 
 namespace Financial.Messaging.RabbitMq.Services;
 
-internal class RabbitMqMessageConsumer : IAsyncDisposable
+/// <summary>
+/// Listens on a single RabbitMQ queue and dispatches received messages
+/// through the pre-compiled invoke delegate on the endpoint registration.
+/// </summary>
+internal sealed class RabbitMqMessageConsumer : IAsyncDisposable
 {
     private readonly IChannel _channel;
-    private readonly EndpointRegistration _endpointRegistration;
-    private readonly IServiceScopeFactory _serviceScopeFactory;
+    private readonly EndpointRegistration _registration;
+    private readonly IServiceScopeFactory _scopeFactory;
+    private readonly RabbitMqOptions _options;
     private readonly ILogger<RabbitMqMessageConsumer> _logger;
-
-    private string? _consumerTag;
-    private int _processingCount;
+    private readonly CancellationTokenSource _stoppingCts = new();
 
     public RabbitMqMessageConsumer(
         IChannel channel,
-        EndpointRegistration endpointRegistration,
-        IServiceScopeFactory serviceScopeFactory,
+        EndpointRegistration registration,
+        IServiceScopeFactory scopeFactory,
+        RabbitMqOptions options,
         ILogger<RabbitMqMessageConsumer> logger)
     {
         _channel = channel;
-        _endpointRegistration = endpointRegistration;
-        _serviceScopeFactory = serviceScopeFactory;
+        _registration = registration;
+        _scopeFactory = scopeFactory;
+        _options = options;
         _logger = logger;
     }
 
+    /// <summary>
+    /// Starts consuming messages from the registered queue.
+    /// </summary>
     public async Task StartAsync(CancellationToken cancellationToken)
     {
         await _channel.BasicQosAsync(
             prefetchSize: 0,
-            prefetchCount: 10,
+            prefetchCount: _options.PrefetchCount,
             global: false,
             cancellationToken: cancellationToken);
 
         var consumer = new AsyncEventingBasicConsumer(_channel);
-        consumer.ReceivedAsync += (_, ea) => OnMessageReceivedAsync(ea, cancellationToken);
+        consumer.ReceivedAsync += OnMessageReceivedAsync;
 
-        _consumerTag = await _channel.BasicConsumeAsync(
-            queue: _endpointRegistration.QueueName,
+        await _channel.BasicConsumeAsync(
+            queue: _registration.QueueName,
             autoAck: false,
             consumer: consumer,
             cancellationToken: cancellationToken);
 
         _logger.LogInformation(
-            "{MethodName}. Consumer started on queue {Queue} for {MessageType}",
-            nameof(StartAsync),
-            _endpointRegistration.QueueName,
-            _endpointRegistration.MessageType.Name);
+            "{MethodName}. Started consuming queue '{Queue}' with handler '{Handler}'.",
+            _registration.QueueName,
+            _registration.HandlerType.Name,
+            nameof(StartAsync));
     }
 
-    public async Task StopAsync(CancellationToken cancellationToken)
+    private async Task OnMessageReceivedAsync(object sender, BasicDeliverEventArgs args)
     {
-        if (_consumerTag is not null)
-        {
-            await _channel.BasicCancelAsync(_consumerTag, cancellationToken: cancellationToken);
-        }
-
-        var timeout = DateTime.UtcNow.AddSeconds(30);
-        while (_processingCount > 0 && DateTime.UtcNow < timeout)
-            await Task.Delay(50, cancellationToken);
-
-        if (_processingCount > 0)
-        {
-            _logger.LogWarning(
-                "{MethodName}. Consumer stopped with {Count} message(s) still in-flight on queue {Queue}",
-                nameof(StopAsync),
-                _processingCount,
-                _endpointRegistration.QueueName);
-        }
-
-        if (_channel.IsOpen)
-        {
-            await _channel.CloseAsync(cancellationToken);
-        }
-    }
-
-    public async ValueTask DisposeAsync()
-    {
-        if (_channel.IsOpen)
-        {
-            await _channel.DisposeAsync();
-        }
-
-        GC.SuppressFinalize(this);
-    }
-
-    private async Task OnMessageReceivedAsync(BasicDeliverEventArgs basicDeliverEventArgs, CancellationToken cancellationToken)
-    {
-        Interlocked.Increment(ref _processingCount);
+        var deliveryTag = args.DeliveryTag;
 
         try
         {
-            var message = (IMessage)JsonSerializer.Deserialize(basicDeliverEventArgs.Body.Span, _endpointRegistration.MessageType)!;
+            var message = JsonSerializer.Deserialize(args.Body.Span, _registration.MessageType);
 
-            await using var scope = _serviceScopeFactory.CreateAsyncScope();
+            await using var scope = _scopeFactory.CreateAsyncScope();
 
-            var handlerType = typeof(IMessageHandler<>).MakeGenericType(_endpointRegistration.MessageType);
+            var handlerType = typeof(IMessageHandler<>).MakeGenericType(_registration.MessageType);
             var handler = scope.ServiceProvider.GetRequiredService(handlerType);
 
             await (Task)handlerType
                 .GetMethod(nameof(IMessageHandler<IMessage>.HandleAsync))!
-                .Invoke(handler, [message, cancellationToken])!;
+                .Invoke(handler, [message, _stoppingCts.Token])!;
 
-            await _channel.BasicAckAsync(
-                basicDeliverEventArgs.DeliveryTag,
-                multiple: false,
-                cancellationToken);
+            await _channel.BasicAckAsync(deliveryTag, multiple: false);
         }
-        catch (Exception exception)
+        catch (OperationCanceledException) when (_stoppingCts.IsCancellationRequested)
+        {
+            _logger.LogWarning(
+                "{MethodName}. Message processing cancelled during shutdown on queue '{Queue}'. Requeuing.",
+                nameof(OnMessageReceivedAsync),
+                _registration.QueueName);
+
+            await NackSafeAsync(deliveryTag, requeue: true);
+        }
+        catch (Exception ex)
         {
             _logger.LogError(
-                exception,
-                "{MethodName}. Failed to handle {MessageType} from queue {Queue}. Details: {Message}",
+                ex,
+                "{MethodName}. Error processing message from queue '{Queue}'. Delivery tag: {DeliveryTag}.",
                 nameof(OnMessageReceivedAsync),
-                _endpointRegistration.MessageType.Name,
-                _endpointRegistration.QueueName,
-                exception.Message);
+                _registration.QueueName,
+                deliveryTag);
 
-            await _channel.BasicNackAsync(basicDeliverEventArgs.DeliveryTag, multiple: false, requeue: false, cancellationToken);
+            await NackSafeAsync(deliveryTag, requeue: false);
         }
-        finally
+    }
+
+    private async Task NackSafeAsync(ulong deliveryTag, bool requeue)
+    {
+        try
         {
-            Interlocked.Decrement(ref _processingCount);
+            await _channel.BasicNackAsync(deliveryTag, multiple: false, requeue: requeue);
         }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(
+                ex,
+                "{MethodName}. Failed to nack delivery tag {DeliveryTag}.",
+                nameof(NackSafeAsync),
+                deliveryTag);
+        }
+    }
+
+    /// <summary>
+    /// Signals the consumer to stop processing, closes the channel gracefully, and releases all held resources.
+    /// </summary>
+    public async ValueTask DisposeAsync()
+    {
+        await _stoppingCts.CancelAsync();
+
+        try
+        {
+            await _channel.CloseAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Error closing consumer channel for queue '{Queue}'.", _registration.QueueName);
+        }
+
+        await _channel.DisposeAsync();
+        _stoppingCts.Dispose();
+
+        GC.SuppressFinalize(this);
     }
 }

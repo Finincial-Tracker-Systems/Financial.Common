@@ -1,7 +1,7 @@
 <Project>
   <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
   <PropertyGroup>
-    <Version>1.1.0</Version>
+    <Version>1.1.1</Version>
     <Nullable>enable</Nullable>
     <Description>RabbitMQ implementation of FinancialTracker messaging abstractions.</Description>
   </PropertyGroup>

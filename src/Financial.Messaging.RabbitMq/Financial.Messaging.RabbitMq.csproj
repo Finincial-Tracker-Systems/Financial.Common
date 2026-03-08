@@ -6,12 +6,11 @@
 
   <ItemGroup>
     <PackageReference Include="Financial.Tracker.Messaging.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" />
     <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" />
+    <PackageReference Include="Microsoft.Extensions.Options.DataAnnotations" />
     <PackageReference Include="RabbitMQ.Client" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="DependencyInjection\" />
   </ItemGroup>
 
 </Project>

@@ -22,7 +22,7 @@ internal sealed class RabbitMqOptions
     public required string Password { get; set; }
 
     /// <summary>Prefix applied to all exchange and queue names.</summary>
-    public string ExntityPrefix { get; set; } = string.Empty;
+    public string EntityPrefix { get; set; } = string.Empty;
 
     /// <summary>Whether queues and exchanges survive broker restart.</summary>
     public bool Durable { get; set; } = true;

@@ -4,13 +4,16 @@ using RabbitMQ.Client;
 
 namespace Financial.Messaging.RabbitMq.Topology;
 
-internal sealed class RabbitMqTopologyBuilder
+/// <summary>
+/// Builds and applies RabbitMQ topology by registering exchanges, queues, and bindings.
+/// </summary>
+internal sealed class TopologyBuilder
 {
-    private readonly List<Func<IChannel, Task>> _declarations = new();
+    private readonly List<Func<IChannel, Task>> _declarations = [];
     private readonly RabbitMqEntityNameFormatter _formatter;
     private readonly RabbitMqOptions _rabbitMqOptions;
 
-    public RabbitMqTopologyBuilder(RabbitMqEntityNameFormatter formatter, RabbitMqOptions rabbitMqOptions)
+    public TopologyBuilder(RabbitMqEntityNameFormatter formatter, RabbitMqOptions rabbitMqOptions)
     {
         _formatter = formatter;
         _rabbitMqOptions = rabbitMqOptions;
@@ -20,8 +23,8 @@ internal sealed class RabbitMqTopologyBuilder
     /// Registers a declaration for a Fanout exchange associated with the specified message type.
     /// </summary>
     /// <typeparam name="TMessage">The type of message the exchange will handle.</typeparam>
-    /// <returns>The current <see cref="RabbitMqTopologyBuilder"/> instance for method chaining.</returns>
-    public RabbitMqTopologyBuilder AddChannel<TMessage>() where TMessage : class, IMessage
+    /// <returns>The current <see cref="TopologyBuilder"/> instance for method chaining.</returns>
+    public TopologyBuilder AddChannel<TMessage>() where TMessage : class, IMessage
     {
         var exchangeName = _formatter.FormatExchangeName<TMessage>();
 
@@ -39,8 +42,8 @@ internal sealed class RabbitMqTopologyBuilder
     /// it automatically creates a corresponding DLQ and configures the main queue to route failed messages to it.
     /// </summary>
     /// <param name="queueName">The name of the primary queue to be declared.</param>
-    /// <returns>The current <see cref="RabbitMqTopologyBuilder"/> instance for method chaining.</returns>
-    public RabbitMqTopologyBuilder AddEndpoint(string queueName)
+    /// <returns>The current <see cref="TopologyBuilder"/> instance for method chaining.</returns>
+    public TopologyBuilder AddEndpoint(string queueName)
     {
         _declarations.Add(async channel =>
         {
@@ -76,7 +79,7 @@ internal sealed class RabbitMqTopologyBuilder
     /// </summary>
     /// <typeparam name="TMessage">The message type whose exchange should be bound.</typeparam>
     /// <param name="queueName">The name of the queue to bind to the exchange.</param>
-    public RabbitMqTopologyBuilder AddRoute<TMessage>(string queueName)
+    public TopologyBuilder AddRoute<TMessage>(string queueName)
         where TMessage : class, IMessage
     {
         var exchangeName = _formatter.FormatExchangeName<TMessage>();
