@@ -3,7 +3,7 @@
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
   </PropertyGroup>
   <ItemGroup>
-    <PackageVersion Include="Financial.Tracker.Messaging.Abstractions" Version="1.0.0" />
+    <PackageVersion Include="Financial.Tracker.Messaging.Abstractions" Version="1.0.1" />
     <PackageVersion Include="Microsoft.Extensions.Configuration.Binder" Version="10.0.3" />
     <PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.3" />
     <PackageVersion Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="10.0.3" />
