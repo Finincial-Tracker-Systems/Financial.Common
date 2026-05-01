@@ -1,0 +1,77 @@
+name: CI - DotNet Publish NuGet
+
+run-name: "Publish Financial.${{ github.event.inputs.project }}"
+
+on:
+  workflow_dispatch:
+    inputs:
+      project:
+        description: 'Project to publish'
+        required: true
+        type: choice
+        options:
+          - Messaging.Abstractions
+          - Messaging.RabbitMq
+      prerelease:
+        description: 'Prerelease suffix (e.g. beta.1)'
+        required: false
+        type: string
+        default: ''
+
+jobs:
+  build-and-test:
+    uses: ./.github/workflows/dotnet-build-and-test.yaml
+
+  publish:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+
+    permissions:
+      packages: write
+
+    env:
+      DOTNET_VERSION: '8.x'
+      PROJECT_PREFIX: Financial
+      NUGET_SOURCE: https://api.nuget.org/v3/index.json
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Resolve version
+        id: version
+        env:
+          PRERELEASE: ${{ github.event.inputs.prerelease }}
+        run: |
+          PROJECT="${{ env.PROJECT_PREFIX }}.${{ github.event.inputs.project }}"
+          CSPROJ="src/$PROJECT/$PROJECT.csproj"
+          BASE_VERSION=$(dotnet msbuild "$CSPROJ" -getProperty:Version)
+
+          if [ -n "$PRERELEASE" ]; then
+            VERSION="$BASE_VERSION-$PRERELEASE"
+          else
+            VERSION="$BASE_VERSION"
+          fi
+
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "project=$PROJECT" >> $GITHUB_OUTPUT
+          echo "Financial.$PROJECT v$VERSION" >> $GITHUB_STEP_SUMMARY
+
+      - name: Pack
+        working-directory: src/${{ steps.version.outputs.project }}
+        run: |
+          dotnet pack \
+            --configuration Release \
+            --output ../../nupkgs \
+            -p:Version=${{ steps.version.outputs.version }}
+
+      - name: Push to GitHub Packages
+        run: |
+          dotnet nuget push ./nupkgs/*.nupkg \
+            --source "https://nuget.pkg.github.com/AlesonDev/index.json" \
+            --api-key ${{ secrets.GITHUB_TOKEN }} \
+            --skip-duplicate

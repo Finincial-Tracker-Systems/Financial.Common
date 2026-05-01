@@ -1,0 +1,7 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <PackageId>Financial.Tracker.Messaging.Abstractions</PackageId>
+  </PropertyGroup>
+
+</Project>

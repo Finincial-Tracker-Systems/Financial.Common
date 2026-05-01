@@ -1,0 +1,11 @@
+<Project>
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <Authors>Nazar Lukianov</Authors>
+    <Company>FinancialTracker</Company>
+    <RepositoryUrl>https://github.com/AlesonDev/Financial.Common</RepositoryUrl>
+  </PropertyGroup>
+</Project>
