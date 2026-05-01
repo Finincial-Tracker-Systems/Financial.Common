@@ -28,11 +28,13 @@ jobs:
 
     permissions:
       packages: write
+      contents: read
 
     env:
       DOTNET_VERSION: '8.x'
       PROJECT_PREFIX: Financial
       NUGET_SOURCE: https://api.nuget.org/v3/index.json
+      NUGET_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     steps:
       - uses: actions/checkout@v4
@@ -72,6 +74,6 @@ jobs:
       - name: Push to GitHub Packages
         run: |
           dotnet nuget push ./nupkgs/*.nupkg \
-            --source "https://nuget.pkg.github.com/AlesonDev/index.json" \
+            --source "https://nuget.pkg.github.com/Finincial-Tracker-Systems/index.json" \
             --api-key ${{ secrets.GITHUB_TOKEN }} \
             --skip-duplicate
