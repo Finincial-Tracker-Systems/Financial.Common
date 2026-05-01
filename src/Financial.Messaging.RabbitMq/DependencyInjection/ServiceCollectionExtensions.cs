@@ -60,6 +60,7 @@ public static class ServiceCollectionExtensions
 
         services.AddHostedService<RabbitMqHostedService>();
         services.AddSingleton<RabbitMqMessagePublisher>();
+        services.AddSingleton<IMessagePublisher>(sp => sp.GetRequiredService<RabbitMqMessagePublisher>());
 
         return services;
     }
