@@ -7,6 +7,6 @@ public interface IBusConfigurator
     /// <typeparam name="THandler">The handler that processes the message.</typeparam>
     /// <returns>The configurator instance for fluent chaining.</returns>
     IBusConfigurator ReceiveEndpoint<TMessage, THandler>()
-        where TMessage : class, IMessage
+        where TMessage : Message
         where THandler : class, IMessageHandler<TMessage>;
 }
