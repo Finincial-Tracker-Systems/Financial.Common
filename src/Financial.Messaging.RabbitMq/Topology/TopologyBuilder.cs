@@ -24,7 +24,7 @@ internal sealed class TopologyBuilder
     /// </summary>
     /// <typeparam name="TMessage">The type of message the exchange will handle.</typeparam>
     /// <returns>The current <see cref="TopologyBuilder"/> instance for method chaining.</returns>
-    public TopologyBuilder AddChannel<TMessage>() where TMessage : class, IMessage
+    public TopologyBuilder AddChannel<TMessage>() where TMessage : Message
     {
         var exchangeName = _formatter.FormatExchangeName<TMessage>();
 
@@ -80,7 +80,7 @@ internal sealed class TopologyBuilder
     /// <typeparam name="TMessage">The message type whose exchange should be bound.</typeparam>
     /// <param name="queueName">The name of the queue to bind to the exchange.</param>
     public TopologyBuilder AddRoute<TMessage>(string queueName)
-        where TMessage : class, IMessage
+        where TMessage : Message
     {
         var exchangeName = _formatter.FormatExchangeName<TMessage>();
 

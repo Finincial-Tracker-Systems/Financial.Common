@@ -35,7 +35,7 @@ internal sealed class RabbitMqMessagePublisher : IMessagePublisher, IAsyncDispos
     /// <param name="message">The message instance to publish.</param>
     /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
     public async Task PublishAsync<TMessage>(TMessage message, CancellationToken cancellationToken)
-        where TMessage : class, IMessage
+        where TMessage : Message
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
