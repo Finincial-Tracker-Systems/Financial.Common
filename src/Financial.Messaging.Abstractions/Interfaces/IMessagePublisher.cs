@@ -7,5 +7,5 @@ public interface IMessagePublisher
     /// <param name="message">The message instance to publish.</param>
     /// <param name="cancellationToken">Token to cancel the operation.</param>
     Task PublishAsync<TMessage>(TMessage message, CancellationToken cancellationToken = default)
-       where TMessage : class, IMessage;
+       where TMessage : Message;
 }
