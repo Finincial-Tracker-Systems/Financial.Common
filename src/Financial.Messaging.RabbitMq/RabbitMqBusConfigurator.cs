@@ -32,7 +32,7 @@ internal sealed class RabbitMqBusConfigurator : IBusConfigurator
     /// <typeparam name="THandler">The handler type to process the message.</typeparam>
     /// <returns>The current <see cref="IBusConfigurator"/> instance for fluent chaining.</returns>
     public IBusConfigurator ReceiveEndpoint<TMessage, THandler>()
-        where TMessage : class, IMessage
+        where TMessage : Message
         where THandler : class, IMessageHandler<TMessage>
     {
         var queueName = _formatter.FormatQueueName<THandler>();

@@ -76,7 +76,7 @@ internal sealed class RabbitMqMessageConsumer : IAsyncDisposable
             var handler = scope.ServiceProvider.GetRequiredService(handlerType);
 
             await (Task)handlerType
-                .GetMethod(nameof(IMessageHandler<IMessage>.HandleAsync))!
+                .GetMethod(nameof(IMessageHandler<Message>.HandleAsync))!
                 .Invoke(handler, [message, _stoppingCts.Token])!;
 
             await _channel.BasicAckAsync(deliveryTag, multiple: false);
