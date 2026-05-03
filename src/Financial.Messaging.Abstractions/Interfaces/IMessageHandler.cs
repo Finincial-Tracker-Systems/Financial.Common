@@ -1,7 +1,7 @@
 ﻿namespace Financial.Messaging.Abstractions.Messages;
 
 public interface IMessageHandler<in TMessage>
-    where TMessage : class, IMessage
+    where TMessage : Message
 {
     /// <summary>Processes the given message asynchronously.</summary>
     /// <param name="message">The message to handle.</param>
