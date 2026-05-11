@@ -12,7 +12,7 @@ namespace Financial.Messaging.RabbitMq;
 /// </summary>
 internal sealed class RabbitMqHostedService : IHostedService, IAsyncDisposable
 {
-    private readonly ConnectionFactory _connectionFactory;
+    private readonly IConnectionFactory _connectionFactory;
     private readonly TopologyBuilder _topologyBuilder;
     private readonly RabbitMqBusConfigurator _configurator;
     private readonly RabbitMqOptions _options;
@@ -23,7 +23,7 @@ internal sealed class RabbitMqHostedService : IHostedService, IAsyncDisposable
     private readonly List<RabbitMqMessageConsumer> _consumers = [];
 
     public RabbitMqHostedService(
-        ConnectionFactory connectionFactory,
+        IConnectionFactory connectionFactory,
         TopologyBuilder topologyBuilder,
         RabbitMqBusConfigurator configurator,
         RabbitMqOptions options,
