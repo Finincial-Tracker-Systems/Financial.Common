@@ -12,7 +12,7 @@ namespace Financial.Messaging.RabbitMq;
 /// </summary>
 internal sealed class RabbitMqMessagePublisher : IMessagePublisher, IAsyncDisposable
 {
-    private readonly ConnectionFactory _connectionFactory;
+    private readonly IConnectionFactory _connectionFactory;
     private readonly RabbitMqEntityNameFormatter _formatter;
 
     private IConnection? _connection;
@@ -20,7 +20,7 @@ internal sealed class RabbitMqMessagePublisher : IMessagePublisher, IAsyncDispos
     private bool _disposed;
 
     public RabbitMqMessagePublisher(
-        ConnectionFactory connectionFactory,
+        IConnectionFactory connectionFactory,
         RabbitMqEntityNameFormatter formatter)
     {
         _connectionFactory = connectionFactory;

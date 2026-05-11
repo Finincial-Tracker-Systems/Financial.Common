@@ -4,5 +4,7 @@
     <Project Path="src/Financial.Messaging.Abstractions/Financial.Messaging.Abstractions.csproj" />
     <Project Path="src/Financial.Messaging.RabbitMq/Financial.Messaging.RabbitMq.csproj" />
   </Folder>
-  <Folder Name="/tests/" />
+  <Folder Name="/tests/">
+    <Project Path="tests/Financial.Messaging.Tests/Financial.Messaging.Tests.csproj" />
+  </Folder>
 </Solution>

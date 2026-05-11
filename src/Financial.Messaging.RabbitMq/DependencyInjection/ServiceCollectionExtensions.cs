@@ -47,7 +47,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton(topologyBuilder);
         services.AddSingleton(configurator);
 
-        services.AddSingleton(_ => new ConnectionFactory
+        services.AddSingleton<IConnectionFactory>(_ => new ConnectionFactory
         {
             HostName = options.Host,
             Port = options.Port,
